@@ -1,36 +1,3 @@
-/***************************************************************************
- *
- *  Copyright (C) 2016 Codeplay Software Limited
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  For your convenience, a copy of the License has been included in this
- *  repository.
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
- *  Codeplay's ComputeCpp SDK
- *
- *  matrix-multiply.cpp
- *
- *  Description:
- *    Example of matrix multiplication in SYCL.
- *
- **************************************************************************/
-
-/*  This example compares an OpenMP blocked matrix multiplication
- *  implementation with a SYCL blocked matrix multiplication example.
- *  The purpose is not to compare performance, but to show the similarities
- *  and differences between them.
- *  See block_host for the OpenMP implementation. */
-
 #include <CL/sycl.hpp>
 
 #include <chrono>
@@ -58,32 +25,6 @@ void display_matrix(float* m, int matSize) {
   ;
 }
 
-/* Implements a host C++ version of the matrix multiplication.
- * If compiler supports OpenMP, code is parallelized. Scheduling
- * uses static chunks of block_size. */
-void block_host(float* MA, float* MB, float* MC, int matSize) {
-  /* We set the block size to 32 for simplicity, though the optimal
-   * value will depend on the platform this is run on. */
-  int block_size = 32;
-  int numBlocks = block_size / matSize;
-  int extraBlockLength = block_size % matSize;
-  numBlocks = extraBlockLength ? (numBlocks + 1) : (numBlocks);
-
-#pragma omp parallel for collapse(2)
-  for (int bIndexI = 0; bIndexI < matSize; bIndexI += block_size)
-    for (int bIndexJ = 0; bIndexJ < matSize; bIndexJ += block_size)
-      for (int bIndexK = 0; bIndexK < matSize; bIndexK += block_size) {
-        int i = bIndexI;
-        int j = bIndexJ;
-        int k = bIndexK;
-        for (int bi = i; bi < std::min(i + block_size, matSize); bi++)
-          for (int bj = j; bj < std::min(j + block_size, matSize); bj++)
-            for (int bk = k; bk < std::min(k + block_size, matSize); bk++) {
-              MC[bi * matSize + bj] +=
-                  MA[bi * matSize + bk] * MB[bk * matSize + bj];
-            }
-      }
-}
 
 /* Obtains the previous power of two from the given integer.
  * It works by masking out all ones after the first one bit,
@@ -226,7 +167,6 @@ int main(int argc, char* argv[]) {
   float* MB;
   float* MC;
   bool sycl = true;
-  bool omp = true;
   bool error = false;
 
   if (argc != 2 && argc != 3) {
@@ -248,11 +188,7 @@ int main(int argc, char* argv[]) {
   }
 
   if (argc == 3) {
-    if (std::string(argv[2]) == "omp") {
-      omp = true;
-      sycl = false;
-    } else if (std::string(argv[2]) == "sycl") {
-      omp = false;
+     if (std::string(argv[2]) == "sycl") {
       sycl = true;
     } else {
       usage(argv[0]);
@@ -280,43 +216,7 @@ int main(int argc, char* argv[]) {
   display_matrix(MB, matSize);
   display_matrix(MC, matSize);
 
-  if (omp) {
-#if defined(_OPENMP)
-    std::cout << "OpenMP: ";
-#else
-    std::cout << "C++: ";
-#endif
-
-    {
-      auto start = std::chrono::steady_clock::now();
-      block_host(MA, MB, MC, matSize);
-      auto end = std::chrono::steady_clock::now();
-      auto time =
-          std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-              .count();
-      std::cout << "Time: " << time << std::endl;
-      float flops =
-          (2.0f * matSize * matSize * matSize / (time / 1000.0f)) * 1.0e-9f;
-      std::cout << "GFLOPs: " << flops << std::endl;
-
-      bool error = false;
-      // Testing
-      for (int i = 0; i < matSize; i++)
-        for (int j = 0; j < matSize; j++) {
-          if (std::fabs(MC[i * matSize + j] - MB[i * matSize + j]) > 1e-8) {
-            std::cout << " Position " << i << ", " << j
-                      << " differs: " << MC[i * matSize + j]
-                      << " != " << MB[i * matSize + j] << std::endl;
-            error = true;
-          }
-        }
-      if (!error) {
-        std::cout << "Success" << std::endl;
-      } else {
-        std::cout << " Error in the computation " << std::endl;
-      }
-    }
-  }
+  
 
   if (sycl) {
     std::cout << " ***** SYCL " << std::endl;
@@ -374,7 +274,7 @@ int main(int argc, char* argv[]) {
             }
           }
         if (!error) {
-          std::cout << "Success" << std::endl;
+          std::cout << "Successesfull !" << std::endl;
           ;
         } else {
           std::cout << " Error in the computation " << std::endl;
