@@ -216,11 +216,9 @@ bool local_mxm(cl::sycl::queue& q, T* MA, T* MB, T* MC, int matSize) {
 void usage(std::string programName) {
   std::cout << " Incorrect number of parameters " << std::endl;
   std::cout << " Usage: " << std::endl;
-  std::cout << programName << " [matrix size] [omp|sycl]" << std::endl;
+  std::cout << programName << " [matrix size] [sycl]" << std::endl;
   std::cout << "[matrix size] : Size of the matrix to multiply (minimum 32)"
             << std::endl;
-  std::cout << "[omp|sycl]    : Run the OpenMP or the SYCL variant. "
-            << " Default is to use both " << std::endl;
 }
 
 int main(int argc, char* argv[]) {
